@@ -11,6 +11,7 @@
     canvas { background: #eee; display: block; margin: 0 auto; }
     #restart { display: none }
     button { display: block; margin: 0 auto; }
+    .mySound{ display: none; }
     </style>
 </head>
 <body>
@@ -29,7 +30,8 @@
             score = 0,
             bricks = [],
             lives = 2,
-            isPaused = false;
+            isPaused = false,
+            isAudioPlaying = false;
 
         let canvas, ctx, text, restartBtn;
 
@@ -40,6 +42,34 @@
             document.body.appendChild(canvas);
 
             callback();
+        }
+
+        class Sound {
+
+            constructor(src) {
+                this.sound = this.createSoundElement(src);
+            }
+
+            createSoundElement(src) {
+                let mySound = document.createElement('audio');
+                mySound.src = src;
+                setAttributes(mySound, {'preload': 'auto', 'controls': 'none', 'class': 'mySound'});
+                document.body.appendChild(mySound);
+                return mySound;
+            }
+
+            play() {
+                this.sound.play();
+            }
+
+            isPlaying() {
+                return !this.sound.paused;
+            }
+
+            restart() {
+                this.sound.currentTime = 0;
+            }
+
         }
 
         function createGameMenu() {
@@ -168,7 +198,13 @@
                             dy = -dy;
                             b.status = 0;
                             score++;
+                            if (whoosh.isPlaying()) {
+                                whoosh.restart();
+                            } else {
+                                whoosh.play();
+                            }
                             if(score == columnCount*rowCount) {
+                                tada.play();
                                 isPaused = true;
                                 text = "YOU WIN";
                                 restartBtn.style.display = "block";
@@ -180,9 +216,6 @@
             }
         }
 
-        function clearCanvas(ctx, canvas) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
 
         function createImg(ctx, canvas, x, y, w, h) {
             ctx.drawImage(img, x, y, w, h);
@@ -263,7 +296,7 @@
             let canvas = document.getElementById("myCanvas"),
                 ctx = canvas.getContext('2d'),
                 brickColumnCount = 5,
-                brickRowCount = 5,
+                brickRowCount = 3,
                 brickWidth = 75,
                 brickHeight = 20,
                 brickOffsetLeft = 30,
@@ -275,15 +308,17 @@
             let ball = new Ball(canvas.width/2, canvas.height-30, 10, 0);
             let paddle = new Paddle(10, 75, canvas);
 
-            restartBtn = document.getElementById("restart")
+            restartBtn = document.getElementById("restart");
 
             createBrickSet(brickColumnCount, brickRowCount, brickWidth, brickHeight);
+
+            // mainTheme.play();
 
             function draw() {
                 if(isPaused) {
                     drawMessage(ctx, canvas, text, "#0095DD");
                 } else {
-                    clearCanvas(ctx, canvas);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     drawBricks(ctx, canvas, brickColumnCount, brickRowCount, brickWidth, brickHeight, "#000", padding, brickOffsetLeft, brickOffsetTop);
                     drawCircle(ctx, canvas, ball, paddle, "#0095DD");
                     drawPaddle(ctx, canvas, paddle, "#0095DD");
@@ -303,8 +338,11 @@
         }        
 
         createGameMenu();
+        const mainTheme = new Sound('sounds/Main-Theme.mp3');
+        const whoosh = new Sound('sounds/Woosh-Mark_DiAngelo-4778593.mp3');
+        const tada = new Sound('sounds/Ta-Da-SoundBible.com-1884170640.mp3');
         createCanvas(setup);
-        
+
     })();
     </script>
 </body>
