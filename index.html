@@ -8,7 +8,7 @@
     <style>
     * { padding: 0; margin: 0; }
     body { background: #000; }
-    canvas { background: #eee; display: block; margin: 0 auto; }
+    canvas { background: #230745; display: block; margin: 0 auto; }
     #restart { display: none }
     button { display: block; margin: 0 auto; }
     .mySound{ display: none; }
@@ -31,7 +31,9 @@
             bricks = [],
             lives = 2,
             isPaused = false,
-            isAudioPlaying = false;
+            isAudioPlaying = false,
+            maxParticles = 100,
+            particles = [];
 
         let canvas, ctx, text, restartBtn;
 
@@ -70,6 +72,38 @@
                 this.sound.currentTime = 0;
             }
 
+        }
+
+        class Particle {
+            constructor(x, y, r, d) {
+                this.x = x;
+                this.y = y;
+                this.r = r;
+                this.d = d;
+            }
+        }
+
+        function addParticles(canvas, x, y, r) {
+            for (let p = 0; p < maxParticles; p++) {
+                x = Math.random()*canvas.width;
+                y = Math.random()*canvas.height;
+                r = (Math.random()*r)+1;
+                d = Math.random()*maxParticles;
+
+                particles.push(new Particle(x, y, r, maxParticles));
+            }
+        }
+
+        function update(canvas) {
+            for(let i = 0; i < maxParticles; i++) {
+                var p = particles[i];
+                p.y += Math.cos(p.d) + 1 + p.r/2;
+
+                if (p.y > canvas.height) {
+                    particles[i] = {x: Math.random()*canvas.width, y: -5, r: p.r, d: p.d};
+                    // whoosh.play();               
+                }
+            }
         }
 
         function createGameMenu() {
@@ -150,6 +184,18 @@
             ctx.fillStyle = color;
             ctx.fill();
             ctx.closePath();
+        }
+
+        function drawParticles(ctx, canvas) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.beginPath();
+            for (var i = 0; i < maxParticles; i++) {
+                let p = particles[i];
+                ctx.moveTo(p.x, p.y);
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+            }
+            ctx.fill();
+            update(canvas);
         }
 
         function animateCircle(circle, paddle, canvas) {
@@ -310,6 +356,7 @@
 
             restartBtn = document.getElementById("restart");
 
+            addParticles(canvas, canvas.width, canvas.height, 4);
             createBrickSet(brickColumnCount, brickRowCount, brickWidth, brickHeight);
 
             // mainTheme.play();
@@ -319,7 +366,8 @@
                     drawMessage(ctx, canvas, text, "#0095DD");
                 } else {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    drawBricks(ctx, canvas, brickColumnCount, brickRowCount, brickWidth, brickHeight, "#000", padding, brickOffsetLeft, brickOffsetTop);
+                    drawParticles(ctx, canvas);
+                    drawBricks(ctx, canvas, brickColumnCount, brickRowCount, brickWidth, brickHeight, "#FFF", padding, brickOffsetLeft, brickOffsetTop);
                     drawCircle(ctx, canvas, ball, paddle, "#0095DD");
                     drawPaddle(ctx, canvas, paddle, "#0095DD");
                     drawScore(ctx, brickColumnCount, brickRowCount);
